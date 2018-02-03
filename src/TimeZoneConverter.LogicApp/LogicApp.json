@@ -1,0 +1,135 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "logicAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "Logic App name."
+      },
+      "defaultValue": ""
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location of the Logic App."
+      },
+      "allowedValues": [
+        "australiaeast",
+        "australiasoutheast",
+        "[resourceGroup().location]"
+      ],
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "functionAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the function app."
+      },
+      "defaultValue": ""
+    },
+    "functionName": {
+      "type": "string",
+      "metadata": {
+        "description": "Function name."
+      },
+      "defaultValue": ""
+    },
+    "functionEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Function endpoint."
+      },
+      "defaultValue": ""
+    }
+  },
+  "variables": {
+    "logicApp": {
+      "name": "[parameters('logicAppName')]",
+      "apiVersion": "[providers('Microsoft.Logic', 'workflows').apiVersions[0]]",
+      "location": "[parameters('location')]"
+    },
+    "functionApp": {
+      "resourceId": "[resourceId('Microsoft.Web/sites/functions', parameters('functionAppName'), parameters('functionName'))]",
+      "apiVersion": "[providers('Microsoft.Web', 'sites').apiVersions[0]]",
+      "baseUrl": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/api/')]",
+      "endpoint": "[parameters('functionEndpoint')]"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('logicApp').apiVersion]",
+      "type": "Microsoft.Logic/workflows",
+      "name": "[variables('logicApp').name]",
+      "location": "[variables('logicApp').location]",
+      "tags": {
+        "displayName": "[variables('logicApp').name]"
+      },
+      "properties": {
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "actions": {
+            "Response": {
+              "type": "Response",
+              "inputs": {
+                "statusCode": "@outputs('HTTP')['statusCode']",
+                "body": "@body('HTTP')"
+              },
+              "runAfter": {
+                "HTTP": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "HTTP": {
+              "type": "Http",
+              "inputs": {
+                "method": "POST",
+                "uri": "@{parameters('functionApp')['baseUrl']}@{parameters('functionApp')['endpoint']}",
+                "headers": {
+                  "x-functions-key": "@{parameters('functionApp')['authKey']}"
+                },
+                "body": "@triggerBody()"
+              },
+              "runAfter": {}
+            }
+          },
+          "parameters": {
+            "functionApp": {
+              "type": "object",
+              "defaultValue": {}
+            }
+          },
+          "triggers": {
+            "manual": {
+              "type": "Request",
+              "kind": "Http",
+              "inputs": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "input": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "contentVersion": "1.0.0.0",
+          "outputs": {}
+        },
+        "parameters": {
+          "functionApp": {
+            "value": {
+              "baseUrl": "[variables('functionApp').baseUrl]",
+              "endpoint": "[variables('functionApp').endpoint]",
+              "authKey": "[listSecrets(variables('functionApp').resourceId, variables('functionApp').apiVersion).key]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}
