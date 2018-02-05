@@ -73,10 +73,10 @@
               "type": "Response",
               "inputs": {
                 "statusCode": "@outputs('HTTP')['statusCode']",
-                "body": "@body('HTTP')"
+                "body": "@outputs('Compose')"
               },
               "runAfter": {
-                "HTTP": [
+                "Compose": [
                   "Succeeded"
                 ]
               }
@@ -92,6 +92,19 @@
                 "body": "@triggerBody()"
               },
               "runAfter": {}
+            },
+            "Compose": {
+              "type": "Compose",
+              "inputs": {
+                "input": "@{triggerBody()?['input']}",
+                "logicAppOutput": "@{convertTimeZone(triggerBody()?['input'], 'UTC', 'AUS Eastern Standard Time', 'o')}",
+                "functionOutput": "@{body('HTTP')?['output']}"
+              },
+              "runAfter": {
+                "HTTP": [
+                  "Succeeded"
+                ]
+              }
             }
           },
           "parameters": {
