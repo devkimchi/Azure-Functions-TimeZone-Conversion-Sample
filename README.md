@@ -5,7 +5,7 @@ This provides sample codes that converts time zone from UTC to local date/time u
 
 ## More Readings ##
 
-* English: [Converting UTC to Local Time through Azure Functions and Logic Apps](https://localhost/coming-soon)
+* English: [Converting UTC to Local Time through Azure Functions and Logic Apps](https://blog.mexia.com.au/converting-utc-to-local-time-via-azure-functions-and-logic-apps)
 * Korean: [애저 펑션과 로직 앱을 사용해서 UTC를 현지 시각으로 변환하기](https://localhost/coming-soon)
 
 
